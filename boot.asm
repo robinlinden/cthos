@@ -21,7 +21,20 @@ boot:
 .a20_enabled:
     mov si, a20_enabled_msg
     call print
-    jmp $
+
+    ; A20 enabled, proceed towards protected mode.
+    cli
+
+    xor ax, ax
+    mov ds, ax              ; Clear ds for lgdt.
+    lgdt [gdt_descriptor]
+
+    ; Set protected mode enabled control register bit.
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    jmp 0x08:protected_start
 
 ; output string pointed to by si
 print:
@@ -60,6 +73,44 @@ enable_a20:
     or al, 2
     out 0x92, al
     ret
+
+; Set up the global descriptor table, describing the memory segments.
+; See https://wiki.osdev.org/GDT for info about the structure of a
+; single descriptor.
+gdt:
+gdt_null:
+    dd 0
+    dd 0
+
+gdt_code_segment:
+    dw 0xFFFF    ; limit (0:15)
+    dw 0         ; base  (0:15)
+    db 0         ; base  (16:23)
+    db 10011010b ; access byte
+    db 11001100b ; limit (16:19), flags
+    db 0         ; base (part 4)
+
+gdt_data_segment:
+    dw 0xFFFF
+    dw 0
+    db 0
+    db 10010010b
+    db 11001100b
+    db 0
+gdt_end:
+
+gdt_descriptor:
+        dw gdt_end - gdt - 1
+        dd gdt
+
+[bits 32]
+protected_start:
+    ; Set up segment registers.
+    mov ax, 10h             ; Data segment offset in the GDT.
+    mov ds, ax
+    mov ss, ax
+    mov esp, 0x80000
+    jmp $
 
 beep_msg db 'beep beep boop!', 0x0a, 0x0d, 0
 a20_enabled_msg db 'a20 enabled!', 0x0a, 0x0d, 0
