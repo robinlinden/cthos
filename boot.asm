@@ -108,6 +108,9 @@ protected_start:
     ; Set up segment registers.
     mov ax, 10h             ; Data segment offset in the GDT.
     mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
     mov ss, ax
     mov esp, 0x80000
     jmp $
