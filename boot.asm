@@ -113,12 +113,51 @@ protected_start:
     mov gs, ax
     mov ss, ax
     mov esp, 0x80000
+
+    call vga_clear
+
+    mov si, protected_mode_msg
+    mov ah, 0x1f
+    mov edi, 0
+    call vga_print
+
+    mov si, protected_mode_msg
+    mov ah, 0x2a
+    mov edi, 2
+    call vga_print
+
+    mov si, protected_mode_msg
+    mov ah, 0xdb
+    mov edi, 4
+    call vga_print
+
     jmp $
+
+vga_clear:
+    mov edi, 0xb8000
+    mov ecx, 80*25
+    rep stosw
+    ret
+
+; Output string pointed to by SI with the color AH on the row EDI.
+; Only prints the string at col 0 right now, and doesn't handle newlines.
+vga_print:
+    imul edi, 80*2 ; 80 col rows, 2 bytes per character.
+    add edi, 0xb8000
+.vga_print_next:
+    lodsb
+    cmp al, 0
+    je .vga_print_done
+    stosw
+    jmp .vga_print_next
+.vga_print_done:
+    ret
 
 beep_msg db 'beep beep boop!', 0x0a, 0x0d, 0
 a20_enabled_msg db 'a20 enabled!', 0x0a, 0x0d, 0
 a20_disabled_msg db 'a20 disabled!', 0x0a, 0x0d, 0
 unable_to_enable_a20_msg db 'unable to enable a20!', 0x0a, 0x0d, 0
+protected_mode_msg db 'beep beep boop from protected mode!', 0
 
 times 510-($-$$) db 0
 
