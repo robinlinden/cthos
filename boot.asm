@@ -2,8 +2,11 @@
 [org 0x7c00]
 
 boot:
+    mov [boot_drive], dl
     mov si, beep_msg
     call print
+
+    call load_sector_two
 
     call is_a20_disabled
     jne .a20_enabled
@@ -74,6 +77,17 @@ enable_a20:
     out 0x92, al
     ret
 
+load_sector_two:
+    mov ah, 2            ; read mode
+    mov bx, 0x7e00       ; destination
+    mov al, 1            ; sectors
+    mov cl, 2            ; sector
+    mov dl, [boot_drive] ; disk
+    mov ch, 0            ; cylinder
+    mov dh, 0            ; head
+    int 0x13
+    ret
+
 ; Set up the global descriptor table, describing the memory segments.
 ; See https://wiki.osdev.org/GDT for info about the structure of a
 ; single descriptor.
@@ -131,7 +145,7 @@ protected_start:
     mov edi, 4
     call vga_print
 
-    jmp $
+    call sector_two
 
 vga_clear:
     mov edi, 0xb8000
@@ -153,6 +167,8 @@ vga_print:
 .vga_print_done:
     ret
 
+boot_drive db 0
+
 beep_msg db 'beep beep boop!', 0x0a, 0x0d, 0
 a20_enabled_msg db 'a20 enabled!', 0x0a, 0x0d, 0
 a20_disabled_msg db 'a20 disabled!', 0x0a, 0x0d, 0
@@ -162,3 +178,14 @@ protected_mode_msg db 'beep beep boop from protected mode!', 0
 times 510-($-$$) db 0
 
 dw 0xaa55
+
+sector_two:
+    mov si, sector_two_msg
+    mov ah, 0xdb
+    mov edi, 7
+    call vga_print
+    jmp $
+
+sector_two_msg db 'beep beep boop from sector 2!', 0
+
+times 1024-($-$$) db 0
