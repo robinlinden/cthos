@@ -80,7 +80,7 @@ enable_a20:
 load_sector_two:
     mov ah, 2            ; read mode
     mov bx, 0x7e00       ; destination
-    mov al, 1            ; sectors
+    mov al, 15           ; sectors
     mov cl, 2            ; sector
     mov dl, [boot_drive] ; disk
     mov ch, 0            ; cylinder
@@ -140,12 +140,12 @@ protected_start:
     mov edi, 2
     call vga_print
 
+    call 0x7e00
+
     mov si, protected_mode_msg
     mov ah, 0xdb
     mov edi, 4
     call vga_print
-
-    call sector_two
 
 vga_clear:
     mov edi, 0xb8000
@@ -178,14 +178,3 @@ protected_mode_msg db 'beep beep boop from protected mode!', 0
 times 510-($-$$) db 0
 
 dw 0xaa55
-
-sector_two:
-    mov si, sector_two_msg
-    mov ah, 0xdb
-    mov edi, 7
-    call vga_print
-    jmp $
-
-sector_two_msg db 'beep beep boop from sector 2!', 0
-
-times 1024-($-$$) db 0
