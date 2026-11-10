@@ -7,6 +7,7 @@ boot:
     call print
 
     call load_sector_two
+    jc .sector_two_error
 
     call is_a20_disabled
     jne .a20_enabled
@@ -38,6 +39,13 @@ boot:
     mov cr0, eax
 
     jmp 0x08:protected_start
+
+.sector_two_error:
+    mov si, sector_two_error_msg
+    call print
+    jmp $
+
+sector_two_error_msg db 'Unable to read more disk to move on with more interesting things.', 0
 
 ; output string pointed to by si
 print:
